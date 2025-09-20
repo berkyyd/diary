@@ -53,6 +53,8 @@
             <button class="nav-button" onclick="nextDay()">→</button>
             <button class="nav-button" onclick="goToToday()">Bugün</button>
             <button class="nav-button user-switch-btn" onclick="switchUser()" id="userSwitchBtn">👤</button>
+            <button class="nav-button" onclick="exportData()" title="Verileri dışa aktar">📤</button>
+            <button class="nav-button" onclick="document.getElementById('importInput').click()" title="Verileri içe aktar">📥</button>
         </div>
 
         <!-- Defter Görünümü -->
@@ -136,6 +138,7 @@
 
     <!-- Gizli dosya inputları -->
     <input type="file" id="photoInput" accept="image/*" style="display: none;">
+    <input type="file" id="importInput" accept=".json" style="display: none;" onchange="importDiaryData(this.files[0])">
     
     <script src="script.js"></script>
 </body>

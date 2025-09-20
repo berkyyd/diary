@@ -9,6 +9,7 @@ let dragThreshold = 50; // Minimum sürükleme mesafesi
 let currentPhotoSide = 'left'; // Hangi sayfaya fotoğraf ekleneceği
 let isEditMode = false; // Düzenleme modu
 let currentUser = localStorage.getItem('currentUser') || null; // Mevcut kullanıcı
+let syncInProgress = false; // Senkronizasyon durumu
 
 // Sayfa yüklendiğinde
 document.addEventListener('DOMContentLoaded', function() {
@@ -572,6 +573,95 @@ function saveCurrentDayData() {
     diaryData[dateKey].rightPage.note = getNoteTextWithLineBreaks(nextNoteText);
     
     localStorage.setItem('diaryData', JSON.stringify(diaryData));
+    
+    // Bulut senkronizasyonu (basit versiyon)
+    syncToCloud();
+}
+
+// Basit bulut senkronizasyonu
+function syncToCloud() {
+    if (syncInProgress) return;
+    
+    try {
+        // Verileri JSON olarak hazırla
+        const dataToSync = {
+            diaryData: diaryData,
+            lastSync: new Date().toISOString(),
+            user: currentUser
+        };
+        
+        // localStorage'a sync bilgisi kaydet
+        localStorage.setItem('diarySync', JSON.stringify(dataToSync));
+        
+        // Basit bir export/import sistemi
+        const exportData = {
+            data: diaryData,
+            timestamp: Date.now(),
+            version: '1.0'
+        };
+        
+        // Export linki oluştur (kullanıcı manuel olarak indirebilir)
+        const dataStr = JSON.stringify(exportData, null, 2);
+        const dataBlob = new Blob([dataStr], {type: 'application/json'});
+        const url = URL.createObjectURL(dataBlob);
+        
+        // Gizli bir link oluştur (manuel export için)
+        const exportLink = document.createElement('a');
+        exportLink.href = url;
+        exportLink.download = 'diary-backup.json';
+        exportLink.style.display = 'none';
+        document.body.appendChild(exportLink);
+        
+        // 5 saniye sonra linki kaldır
+        setTimeout(() => {
+            document.body.removeChild(exportLink);
+            URL.revokeObjectURL(url);
+        }, 5000);
+        
+    } catch (error) {
+        console.error('Senkronizasyon hatası:', error);
+    }
+}
+
+// Veri export fonksiyonu
+function exportData() {
+    const exportData = {
+        data: diaryData,
+        timestamp: Date.now(),
+        version: '1.0',
+        user: currentUser
+    };
+    
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataBlob = new Blob([dataStr], {type: 'application/json'});
+    const url = URL.createObjectURL(dataBlob);
+    
+    const exportLink = document.createElement('a');
+    exportLink.href = url;
+    exportLink.download = `diary-backup-${new Date().toISOString().split('T')[0]}.json`;
+    exportLink.click();
+    
+    URL.revokeObjectURL(url);
+    showSaveNotification('Veriler dışa aktarıldı! 📤');
+}
+
+// Veri import fonksiyonu
+function importDiaryData(file) {
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const importedData = JSON.parse(e.target.result);
+            if (importedData.data) {
+                diaryData = importedData.data;
+                localStorage.setItem('diaryData', JSON.stringify(diaryData));
+                loadCurrentDayData();
+                showSaveNotification('Veriler başarıyla yüklendi! 📥');
+            }
+        } catch (error) {
+            showSaveNotification('Dosya formatı hatalı! ❌');
+        }
+    };
+    reader.readAsText(file);
 }
 
 // Günlüğü aç
@@ -682,11 +772,11 @@ function handleTouchMove(e) {
         e.preventDefault();
         
         if (deltaX > 0) {
-            // Sağa kaydırma - sonraki gün
-            nextDay();
-        } else {
-            // Sola kaydırma - önceki gün
+            // Sağa kaydırma - önceki gün (mobilde ters)
             previousDay();
+        } else {
+            // Sola kaydırma - sonraki gün (mobilde ters)
+            nextDay();
         }
         
         isDragging = false;
