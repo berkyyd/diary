@@ -1,0 +1,869 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Kalam', cursive;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    overflow-x: hidden;
+}
+
+/* Kullanıcı Seçim Modalı */
+.user-selection-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 2000;
+    transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.user-selection-modal.hidden {
+    transform: translateX(-100%);
+}
+
+.user-selection-content {
+    text-align: center;
+    color: white;
+    max-width: 600px;
+    padding: 40px;
+}
+
+.user-selection-title {
+    font-family: 'Dancing Script', cursive;
+    font-size: 3rem;
+    font-weight: 700;
+    margin-bottom: 40px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.user-buttons {
+    display: flex;
+    gap: 40px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.user-button {
+    background: rgba(255, 255, 255, 0.1);
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 30px 20px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+}
+
+.user-button:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-5px) scale(1.05);
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+}
+
+.user-avatar {
+    font-size: 4rem;
+    margin-bottom: 10px;
+}
+
+.user-name {
+    font-family: 'Kalam', cursive;
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.user-description {
+    font-family: 'Caveat', cursive;
+    font-size: 1.2rem;
+    opacity: 0.8;
+}
+
+/* Kapak Sayfası */
+.cover-page {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.cover-page.hidden {
+    transform: translateX(-100%);
+}
+
+.cover-content {
+    text-align: center;
+    color: white;
+    max-width: 600px;
+    padding: 40px;
+}
+
+.cover-image-container {
+    margin-bottom: 30px;
+    position: relative;
+}
+
+.cover-image-placeholder {
+    width: 300px;
+    height: 400px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 3px dashed rgba(255, 255, 255, 0.3);
+    border-radius: 15px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.cover-image-placeholder:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: scale(1.02);
+}
+
+.cover-image {
+    width: 300px;
+    height: 400px;
+    object-fit: cover;
+    border-radius: 15px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+}
+
+.cover-icon {
+    font-size: 4rem;
+    margin-bottom: 15px;
+    opacity: 0.8;
+}
+
+
+.diary-title {
+    font-family: 'Dancing Script', cursive;
+    font-size: 3.5rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.diary-subtitle {
+    font-family: 'Caveat', cursive;
+    font-size: 1.5rem;
+    margin-bottom: 30px;
+    opacity: 0.9;
+}
+
+.start-button {
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 15px 40px;
+    font-size: 1.2rem;
+    font-family: 'Kalam', cursive;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.start-button:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.5);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* Ana Günlük Container */
+.diary-container {
+    width: 100%;
+    max-width: 1200px;
+    position: relative;
+    transform: translateX(100%);
+    transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.diary-container.active {
+    transform: translateX(0);
+}
+
+/* Defter Container */
+.notebook-container {
+    display: flex;
+    background: #f5f5f5;
+    border-radius: 20px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    position: relative;
+    min-height: 800px;
+    transition: transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+/* Defter Orta Çizgisi */
+.notebook-spine {
+    width: 4px;
+    background: linear-gradient(to bottom, #ddd 0%, #bbb 50%, #ddd 100%);
+    position: relative;
+    flex-shrink: 0;
+}
+
+.notebook-spine::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: repeating-linear-gradient(
+        to bottom,
+        transparent 0px,
+        transparent 20px,
+        rgba(0, 0, 0, 0.1) 20px,
+        rgba(0, 0, 0, 0.1) 21px
+    );
+}
+
+/* Navigasyon */
+.navigation {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 0 10px;
+}
+
+.nav-button {
+    background: rgba(255, 255, 255, 0.8);
+    border: none;
+    padding: 10px 15px;
+    border-radius: 20px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.nav-button:hover {
+    background: rgba(255, 255, 255, 0.9);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.user-switch-btn {
+    background: rgba(253, 121, 168, 0.8) !important;
+    color: white !important;
+    border: 2px solid rgba(253, 121, 168, 0.3) !important;
+}
+
+.user-switch-btn:hover {
+    background: rgba(253, 121, 168, 0.9) !important;
+    border-color: rgba(253, 121, 168, 0.5) !important;
+}
+
+.date-picker {
+    background: rgba(255, 255, 255, 0.8);
+    border: none;
+    padding: 10px 15px;
+    border-radius: 20px;
+    font-family: 'Kalam', cursive;
+    font-size: 1rem;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.date-picker:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* Günlük Sayfası */
+.diary-page {
+    background: #fefefe;
+    flex: 1;
+    min-height: 800px;
+    position: relative;
+    padding: 40px 30px;
+    overflow: hidden;
+    transition: transform 0.6s ease-out, box-shadow 0.6s ease-out;
+}
+
+.left-page {
+    border-radius: 15px 0 0 15px;
+    box-shadow: inset -2px 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.right-page {
+    border-radius: 0 15px 15px 0;
+    box-shadow: inset 2px 0 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Tarih Bölümü */
+.date-section {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.today-date {
+    font-family: 'Dancing Script', cursive;
+    font-size: 2.5rem;
+    font-weight: 600;
+    color: #8b7d8b;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+    letter-spacing: 1px;
+}
+
+/* Polaroid Fotoğraf Çerçevesi */
+.photo-section {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 40px;
+    position: relative;
+}
+
+.polaroid-frame {
+    background: white;
+    padding: 20px 20px 30px 20px;
+    border-radius: 8px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    transform: rotate(-2deg);
+    transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    position: relative;
+    width: 320px;
+    height: 320px;
+    z-index: 2;
+}
+
+.polaroid-frame:hover {
+    transform: rotate(0deg) scale(1.02);
+    transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.photo-placeholder {
+    width: 100%;
+    height: 260px;
+    background: linear-gradient(135deg, #ffeaa7 0%, #fab1a0 100%);
+    border-radius: 5px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    border: 2px dashed #dda0dd;
+    transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    cursor: pointer;
+}
+
+.photo-placeholder:hover {
+    background: linear-gradient(135deg, #fdcb6e 0%, #e17055 100%);
+    border-color: #a29bfe;
+    transform: scale(1.02);
+}
+
+.photo-container {
+    width: 100%;
+    height: 260px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.photo-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 5px;
+    transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.photo-image:hover {
+    transform: scale(1.02);
+}
+
+.photo-text {
+    font-family: 'Kalam', cursive;
+    color: #6c5ce7;
+    font-size: 0.9rem;
+    font-weight: 400;
+    margin-top: 5px;
+}
+
+/* Düzenleme Modu Butonu */
+.edit-mode-btn {
+    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid #fd79a8;
+    color: #fd79a8;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-family: 'Kalam', cursive;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 10;
+}
+
+.edit-mode-btn:hover {
+    background: #fd79a8;
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* Düzenleme Kontrolleri */
+.edit-control {
+    display: none;
+    position: absolute;
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid #fd79a8;
+    color: #fd79a8;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-family: 'Kalam', cursive;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 10;
+    backdrop-filter: blur(5px);
+}
+
+.edit-control:hover {
+    background: #fd79a8;
+    color: white;
+    transform: scale(1.05);
+}
+
+/* Silme Butonları */
+.delete-photo-btn {
+    top: 10px;
+    right: 10px;
+}
+
+.delete-note-btn {
+    top: 10px;
+    right: 10px;
+}
+
+.add-photo-btn {
+    top: 10px;
+    left: 10px;
+    background: rgba(0, 184, 148, 0.9);
+    border-color: #00b894;
+    color: white;
+}
+
+.add-photo-btn:hover {
+    background: #00b894;
+    color: white;
+}
+
+.photo-icon {
+    font-size: 3rem;
+    margin-bottom: 10px;
+    opacity: 0.7;
+}
+
+
+.polaroid-label {
+    position: absolute;
+    bottom: 15px;
+    left: 20px;
+    right: 20px;
+    text-align: center;
+}
+
+.polaroid-label p {
+    font-family: 'Kalam', cursive;
+    color: #636e72;
+    font-size: 1.1rem;
+    font-weight: 500;
+    margin: 0;
+}
+
+/* Polaroid üstünde bantlar */
+.polaroid-tapes {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    z-index: 3;
+}
+
+.polaroid-tapes .tape {
+    position: absolute;
+    width: 60px;
+    height: 20px;
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    opacity: 0.7;
+}
+
+.polaroid-tapes .tape-1 {
+    top: -5px;
+    right: -5px;
+    transform: rotate(15deg);
+}
+
+.polaroid-tapes .tape-2 {
+    bottom: -5px;
+    left: -5px;
+    transform: rotate(15deg);
+}
+
+/* Not Bölümü - Temiz Tasarım */
+.note-section {
+    margin-top: 20px;
+}
+
+.note-content {
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
+    border: none;
+    position: relative;
+    box-shadow: none;
+}
+
+.note-text {
+    font-family: 'Caveat', cursive;
+    font-size: 1.4rem;
+    line-height: 1.8;
+    color: #2d3436;
+    font-weight: 500;
+    min-height: 120px;
+    outline: none;
+    border: none;
+    background: transparent;
+    width: 100%;
+    resize: none;
+    cursor: text;
+    position: relative;
+    padding: 0;
+    margin: 0;
+    text-align: center;
+    background-image: repeating-linear-gradient(
+        transparent 0px,
+        transparent 25px,
+        rgba(0, 0, 0, 0.08) 25px,
+        rgba(0, 0, 0, 0.08) 26px
+    );
+    background-size: 100% 25px;
+    background-position: 0 2px;
+}
+
+.note-text:empty:before {
+    content: "Bugün ne yaptık, kiminle buluştuk...";
+    color: #b2bec3;
+    font-style: italic;
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    text-align: center;
+}
+
+.note-text:focus {
+    color: #2d3436;
+}
+
+/* Kısıtlı alanlar için stil */
+.note-text[contenteditable="false"] {
+    background-color: transparent !important;
+    cursor: not-allowed !important;
+    user-select: none;
+}
+
+.photo-placeholder[style*="pointer-events: none"] {
+    background: rgba(0, 0, 0, 0.05) !important;
+    cursor: not-allowed !important;
+    opacity: 0.6;
+}
+
+/* Responsive Tasarım */
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+    
+    .user-selection-title {
+        font-size: 2.5rem;
+    }
+    
+    .user-buttons {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .user-button {
+        min-width: 180px;
+        padding: 25px 15px;
+    }
+    
+    .user-avatar {
+        font-size: 3.5rem;
+    }
+    
+    .user-name {
+        font-size: 1.6rem;
+    }
+    
+    .user-description {
+        font-size: 1.1rem;
+    }
+    
+    .cover-image-placeholder,
+    .cover-image {
+        width: 250px;
+        height: 320px;
+    }
+    
+    .diary-title {
+        font-size: 2.8rem;
+    }
+    
+    .diary-subtitle {
+        font-size: 1.3rem;
+    }
+    
+    .navigation {
+        flex-wrap: wrap;
+        gap: 10px;
+        justify-content: center;
+    }
+    
+    .nav-button {
+        padding: 8px 12px;
+        font-size: 1rem;
+    }
+    
+    .date-picker {
+        padding: 8px 12px;
+        font-size: 0.9rem;
+    }
+    
+    .notebook-container {
+        flex-direction: column;
+        border-radius: 15px;
+    }
+    
+    .notebook-spine {
+        width: 100%;
+        height: 4px;
+        background: linear-gradient(to right, #ddd 0%, #bbb 50%, #ddd 100%);
+    }
+    
+    .notebook-spine::before {
+        background: repeating-linear-gradient(
+            to right,
+            transparent 0px,
+            transparent 20px,
+            rgba(0, 0, 0, 0.1) 20px,
+            rgba(0, 0, 0, 0.1) 21px
+        );
+    }
+    
+    .left-page {
+        border-radius: 15px 15px 0 0;
+        box-shadow: inset 0 -2px 5px rgba(0, 0, 0, 0.1);
+    }
+    
+    .right-page {
+        border-radius: 0 0 15px 15px;
+        box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    
+    .diary-page {
+        padding: 30px 20px;
+        min-height: 600px;
+    }
+    
+    .today-date {
+        font-size: 2rem;
+    }
+    
+    .polaroid-frame {
+        width: 280px;
+        height: 280px;
+    }
+    
+    .photo-placeholder,
+    .photo-container {
+        height: 220px;
+    }
+    
+    .photo-icon {
+        font-size: 2.5rem;
+    }
+    
+    .note-text {
+        font-size: 1.2rem;
+        min-height: 100px;
+        background-image: repeating-linear-gradient(
+            transparent 0px,
+            transparent 22px,
+            rgba(0, 0, 0, 0.08) 22px,
+            rgba(0, 0, 0, 0.08) 23px
+        );
+        background-size: 100% 23px;
+        background-position: 0 2px;
+    }
+}
+
+@media (max-width: 480px) {
+    body {
+        padding: 5px;
+    }
+    
+    .cover-content {
+        padding: 20px;
+    }
+    
+    .cover-image-placeholder,
+    .cover-image {
+        width: 200px;
+        height: 260px;
+    }
+    
+    .diary-title {
+        font-size: 2.2rem;
+    }
+    
+    .diary-subtitle {
+        font-size: 1.1rem;
+    }
+    
+    .diary-page {
+        padding: 15px 10px;
+    }
+    
+    .today-date {
+        font-size: 1.8rem;
+    }
+    
+    .navigation {
+        flex-direction: column;
+        gap: 8px;
+        align-items: center;
+    }
+    
+    .nav-button {
+        padding: 6px 10px;
+        font-size: 0.9rem;
+        min-width: 60px;
+    }
+    
+    .date-picker {
+        padding: 6px 10px;
+        font-size: 0.8rem;
+        width: 140px;
+    }
+    
+    .polaroid-frame {
+        width: 240px;
+        height: 240px;
+        padding: 15px 15px 25px 15px;
+    }
+    
+    .photo-placeholder,
+    .photo-container {
+        height: 180px;
+    }
+    
+    .photo-icon {
+        font-size: 2rem;
+    }
+    
+    .note-text {
+        font-size: 1.1rem;
+        background-image: repeating-linear-gradient(
+            transparent 0px,
+            transparent 20px,
+            rgba(0, 0, 0, 0.08) 20px,
+            rgba(0, 0, 0, 0.08) 21px
+        );
+        background-size: 100% 21px;
+        background-position: 0 2px;
+    }
+}
+
+/* Animasyonlar */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInFromRight {
+    from {
+        transform: translateX(100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+@keyframes slideOutToLeft {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(-100%);
+    }
+}
+
+.diary-page {
+    animation: fadeIn 0.8s ease-out;
+}
+
+.polaroid-frame {
+    animation: fadeIn 1s ease-out 0.3s both;
+}
+
+.note-content {
+    animation: fadeIn 1s ease-out 0.6s both;
+}
+
+.diary-container.active {
+    animation: slideInFromRight 0.8s ease-out;
+}
+
+.cover-page.hidden {
+    animation: slideOutToLeft 0.8s ease-out;
+}

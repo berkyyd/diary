@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dijital Günlük</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@300;400;700&family=Dancing+Script:wght@400;500;600;700&family=Caveat:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Kullanıcı Seçim Modalı -->
+    <div class="user-selection-modal active" id="userSelectionModal">
+        <div class="user-selection-content">
+            <h2 class="user-selection-title">Kimsiniz?</h2>
+            <div class="user-buttons">
+                <button class="user-button" onclick="selectUser('berkay')">
+                    <div class="user-avatar">👨‍💻</div>
+                    <div class="user-name">Berkay</div>
+                    <div class="user-description">Sağ sayfa</div>
+                </button>
+                <button class="user-button" onclick="selectUser('sila')">
+                    <div class="user-avatar">👩‍💻</div>
+                    <div class="user-name">Sıla</div>
+                    <div class="user-description">Sol sayfa</div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Kapak Sayfası -->
+    <div class="cover-page" id="coverPage">
+        <div class="cover-content">
+            <div class="cover-image-container">
+                <div class="cover-image-placeholder" id="coverImagePlaceholder">
+                    <div class="cover-icon">📖</div>
+                </div>
+                <img class="cover-image" id="coverImage" style="display: none;" alt="Kapak Fotoğrafı">
+            </div>
+            <h1 class="diary-title">Dijital Günlüğüm</h1>
+            <p class="diary-subtitle">Anılarım ve Hikayelerim</p>
+            <button class="start-button" onclick="openDiary()">Günlüğü Aç</button>
+        </div>
+        <input type="file" id="coverImageInput" accept="image/*" style="display: none;">
+    </div>
+
+    <!-- Ana Günlük Sayfası -->
+    <div class="diary-container" id="diaryContainer">
+        <!-- Navigasyon -->
+        <div class="navigation">
+            <button class="nav-button" onclick="goToCover()">🏠</button>
+            <button class="nav-button" onclick="previousDay()">←</button>
+            <input type="date" id="datePicker" class="date-picker">
+            <button class="nav-button" onclick="nextDay()">→</button>
+            <button class="nav-button" onclick="goToToday()">Bugün</button>
+            <button class="nav-button user-switch-btn" onclick="switchUser()" id="userSwitchBtn">👤</button>
+        </div>
+
+        <!-- Defter Görünümü -->
+        <div class="notebook-container">
+            <!-- Sol Sayfa -->
+            <div class="diary-page left-page" id="leftPage">
+                <div class="date-section">
+                    <h1 class="today-date" id="currentDate"></h1>
+                    <button class="edit-mode-btn" id="editModeBtn" onclick="toggleEditMode()">✏️</button>
+                </div>
+                
+                <div class="photo-section">
+                    <div class="polaroid-frame">
+                        <div class="photo-placeholder" id="photoPlaceholder">
+                            <div class="photo-icon">📷</div>
+                            <p class="photo-text">Fotoğraf ekle</p>
+                        </div>
+                        <div class="photo-container" id="photoContainer" style="display: none;">
+                            <!-- Fotoğraflar buraya dinamik olarak eklenecek -->
+                        </div>
+                        <button class="add-photo-btn edit-control" id="addPhotoBtnLeft" style="display: none;" onclick="addPhoto('left')">+ Fotoğraf Ekle</button>
+                        <button class="delete-photo-btn edit-control" id="deletePhotoBtn" style="display: none;" onclick="deletePhoto('left')">🗑️ Sil</button>
+                        <!-- Polaroid üstünde bantlar -->
+                        <div class="polaroid-tapes">
+                            <div class="tape tape-1"></div>
+                            <div class="tape tape-2"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="note-section">
+                    <div class="note-content" id="noteContent">
+                        <div class="note-text" id="noteText" contenteditable="true">
+                            Bugün harika bir gün geçirdik. Birlikte güzel anılar biriktirdik...
+                        </div>
+                        <button class="delete-note-btn edit-control" id="deleteNoteBtn" style="display: none;" onclick="deleteNote('left')">🗑️ Notu Sil</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Defter Orta Çizgisi -->
+            <div class="notebook-spine"></div>
+
+            <!-- Sağ Sayfa -->
+            <div class="diary-page right-page" id="rightPage">
+                <div class="date-section">
+                    <h1 class="today-date" id="nextDate"></h1>
+                    <button class="edit-mode-btn" id="editModeBtnRight" onclick="toggleEditMode()">✏️</button>
+                </div>
+                
+                <div class="photo-section">
+                    <div class="polaroid-frame">
+                        <div class="photo-placeholder" id="nextPhotoPlaceholder">
+                            <div class="photo-icon">📷</div>
+                            <p class="photo-text">Fotoğraf ekle</p>
+                        </div>
+                        <div class="photo-container" id="nextPhotoContainer" style="display: none;">
+                            <!-- Fotoğraflar buraya dinamik olarak eklenecek -->
+                        </div>
+                        <button class="add-photo-btn edit-control" id="addPhotoBtnRight" style="display: none;" onclick="addPhoto('right')">+ Fotoğraf Ekle</button>
+                        <button class="delete-photo-btn edit-control" id="deleteNextPhotoBtn" style="display: none;" onclick="deletePhoto('right')">🗑️ Sil</button>
+                        <!-- Polaroid üstünde bantlar -->
+                        <div class="polaroid-tapes">
+                            <div class="tape tape-1"></div>
+                            <div class="tape tape-2"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="note-section">
+                    <div class="note-content" id="nextNoteContent">
+                        <div class="note-text" id="nextNoteText" contenteditable="true">
+                            Yarın için planlarımız...
+                        </div>
+                        <button class="delete-note-btn edit-control" id="deleteNextNoteBtn" style="display: none;" onclick="deleteNote('right')">🗑️ Notu Sil</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gizli dosya inputları -->
+    <input type="file" id="photoInput" accept="image/*" style="display: none;">
+    
+    <script src="script.js"></script>
+</body>
+</html>
