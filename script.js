@@ -10,6 +10,7 @@ let currentPhotoSide = 'left'; // Hangi sayfaya fotoğraf ekleneceği
 let isEditMode = false; // Düzenleme modu
 let currentUser = localStorage.getItem('currentUser') || null; // Mevcut kullanıcı
 let syncInProgress = false; // Senkronizasyon durumu
+let firebaseInitialized = false; // Firebase durumu
 
 // Sayfa yüklendiğinde
 document.addEventListener('DOMContentLoaded', function() {
@@ -103,9 +104,22 @@ function initializeApp() {
     updateEditButtons();
     clearOldData(); // Eski verileri temizle
     
-    // Senkronizasyonu başlat
-    checkForSyncUpdates();
-    startPeriodicSync();
+    // Firebase'i kontrol et ve başlat
+    checkFirebaseStatus();
+}
+
+// Firebase durumunu kontrol et
+function checkFirebaseStatus() {
+    if (window.firebaseDb && window.firebaseDoc && window.firebaseSetDoc && window.firebaseOnSnapshot) {
+        firebaseInitialized = true;
+        console.log('Firebase hazır!');
+        
+        // Firebase dinleyicisini başlat
+        startFirebaseListener();
+    } else {
+        console.log('Firebase henüz yüklenmedi, 1 saniye sonra tekrar denenecek...');
+        setTimeout(checkFirebaseStatus, 1000);
+    }
 }
 
 // Event listener'ları ayarla
@@ -582,14 +596,14 @@ function saveCurrentDayData() {
     syncToCloud();
 }
 
-// Gerçek zamanlı senkronizasyon
+// Firebase ile gerçek zamanlı senkronizasyon
 function syncToCloud() {
-    if (syncInProgress) return;
+    if (syncInProgress || !firebaseInitialized) return;
     
     syncInProgress = true;
     
     try {
-        // Verileri JSON olarak hazırla
+        // Verileri Firebase'e kaydet
         const dataToSync = {
             diaryData: diaryData,
             lastSync: Date.now(),
@@ -597,66 +611,78 @@ function syncToCloud() {
             version: '1.0'
         };
         
-        // localStorage'a sync bilgisi kaydet
+        // localStorage'a da kaydet (offline için)
+        localStorage.setItem('diaryData', JSON.stringify(diaryData));
         localStorage.setItem('diarySync', JSON.stringify(dataToSync));
         
-        // Basit bir bulut senkronizasyonu - GitHub Gist kullanarak
-        // Bu örnek için basit bir URL tabanlı sistem kullanacağız
-        const syncData = btoa(JSON.stringify(dataToSync));
-        
-        // URL'de veri saklama (basit çözüm)
-        const syncUrl = `https://berkyyd.github.io/diary?sync=${syncData}`;
-        
-        // Diğer cihazlarda bu URL'yi kontrol et
-        checkForSyncUpdates();
+        // Firebase'e kaydet
+        if (window.firebaseSetDoc && window.firebaseDoc && window.firebaseDb) {
+            const docRef = window.firebaseDoc(window.firebaseDb, 'diary', 'main');
+            window.firebaseSetDoc(docRef, dataToSync)
+                .then(() => {
+                    console.log('Firebase\'e kaydedildi');
+                })
+                .catch((error) => {
+                    console.error('Firebase kaydetme hatası:', error);
+                })
+                .finally(() => {
+                    syncInProgress = false;
+                });
+        } else {
+            syncInProgress = false;
+        }
         
     } catch (error) {
         console.error('Senkronizasyon hatası:', error);
-    } finally {
         syncInProgress = false;
     }
 }
 
-// Senkronizasyon güncellemelerini kontrol et
-function checkForSyncUpdates() {
-    // URL'den sync parametresini kontrol et
-    const urlParams = new URLSearchParams(window.location.search);
-    const syncData = urlParams.get('sync');
+// Firebase'den gerçek zamanlı veri dinleme
+function startFirebaseListener() {
+    if (!firebaseInitialized || !window.firebaseOnSnapshot || !window.firebaseDoc || !window.firebaseDb) {
+        console.log('Firebase henüz hazır değil, 2 saniye sonra tekrar denenecek...');
+        setTimeout(startFirebaseListener, 2000);
+        return;
+    }
     
-    if (syncData) {
-        try {
-            const decodedData = JSON.parse(atob(syncData));
-            if (decodedData.diaryData && decodedData.lastSync) {
+    try {
+        const docRef = window.firebaseDoc(window.firebaseDb, 'diary', 'main');
+        
+        // Gerçek zamanlı dinleme
+        window.firebaseOnSnapshot(docRef, (doc) => {
+            if (doc.exists()) {
+                const data = doc.data();
+                
                 // Yerel verilerden daha yeni mi kontrol et
                 const localSync = localStorage.getItem('diarySync');
                 if (localSync) {
                     const localData = JSON.parse(localSync);
-                    if (decodedData.lastSync > localData.lastSync) {
-                        // Uzaktan veri daha yeni, güncelle
-                        diaryData = decodedData.diaryData;
+                    if (data.lastSync > localData.lastSync) {
+                        // Firebase'den gelen veri daha yeni, güncelle
+                        diaryData = data.diaryData;
                         localStorage.setItem('diaryData', JSON.stringify(diaryData));
-                        localStorage.setItem('diarySync', JSON.stringify(decodedData));
+                        localStorage.setItem('diarySync', JSON.stringify(data));
                         loadCurrentDayData();
                         showSaveNotification('Veriler senkronize edildi! 🔄');
-                        
-                        // URL'yi temizle
-                        window.history.replaceState({}, document.title, window.location.pathname);
                     }
                 } else {
-                    // Yerel veri yok, uzaktan veriyi kullan
-                    diaryData = decodedData.diaryData;
+                    // Yerel veri yok, Firebase'den veriyi kullan
+                    diaryData = data.diaryData;
                     localStorage.setItem('diaryData', JSON.stringify(diaryData));
-                    localStorage.setItem('diarySync', JSON.stringify(decodedData));
+                    localStorage.setItem('diarySync', JSON.stringify(data));
                     loadCurrentDayData();
                     showSaveNotification('Veriler yüklendi! 📥');
-                    
-                    // URL'yi temizle
-                    window.history.replaceState({}, document.title, window.location.pathname);
                 }
             }
-        } catch (error) {
-            console.error('Sync veri hatası:', error);
-        }
+        }, (error) => {
+            console.error('Firebase dinleme hatası:', error);
+        });
+        
+        console.log('Firebase dinleyici başlatıldı');
+        
+    } catch (error) {
+        console.error('Firebase listener başlatma hatası:', error);
     }
 }
 

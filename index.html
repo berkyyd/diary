@@ -6,6 +6,35 @@
     <title>Dijital Günlük</title>
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Kalam:wght@300;400;700&family=Dancing+Script:wght@400;500;600;700&family=Caveat:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        
+        // Firebase config
+        const firebaseConfig = {
+            apiKey: "AIzaSyCRsqNjLquvymkRd54xNlkygQCRzN8iFXg",
+            authDomain: "dearr-diaryy.firebaseapp.com",
+            projectId: "dearr-diaryy",
+            storageBucket: "dearr-diaryy.firebasestorage.app",
+            messagingSenderId: "283825385522",
+            appId: "1:283825385522:web:b45c05aedc0627acf38c2b",
+            measurementId: "G-NQ4DX4C2P5"
+        };
+        
+        // Firebase'i başlat
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        // Global değişkenler olarak kullanılabilir hale getir
+        window.firebaseApp = app;
+        window.firebaseDb = db;
+        window.firebaseDoc = doc;
+        window.firebaseSetDoc = setDoc;
+        window.firebaseGetDoc = getDoc;
+        window.firebaseOnSnapshot = onSnapshot;
+    </script>
 </head>
 <body>
     <!-- Kullanıcı Seçim Modalı -->
