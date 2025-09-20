@@ -105,20 +105,89 @@ function initializeApp() {
     clearOldData(); // Eski verileri temizle
     
     // Firebase'i kontrol et ve başlat
-    checkFirebaseStatus();
+    setTimeout(() => {
+        checkFirebaseStatus();
+    }, 2000); // 2 saniye bekle ki Firebase tam yüklensin
 }
 
 // Firebase durumunu kontrol et
 function checkFirebaseStatus() {
+    console.log('Firebase kontrol ediliyor...');
+    console.log('firebaseDb:', !!window.firebaseDb);
+    console.log('firebaseDoc:', !!window.firebaseDoc);
+    console.log('firebaseSetDoc:', !!window.firebaseSetDoc);
+    console.log('firebaseOnSnapshot:', !!window.firebaseOnSnapshot);
+    
     if (window.firebaseDb && window.firebaseDoc && window.firebaseSetDoc && window.firebaseOnSnapshot) {
         firebaseInitialized = true;
-        console.log('Firebase hazır!');
+        console.log('✅ Firebase hazır!');
+        
+        // Önce mevcut verileri Firebase'den yükle
+        loadFromFirebase();
         
         // Firebase dinleyicisini başlat
         startFirebaseListener();
     } else {
-        console.log('Firebase henüz yüklenmedi, 1 saniye sonra tekrar denenecek...');
+        console.log('❌ Firebase henüz yüklenmedi, 1 saniye sonra tekrar denenecek...');
         setTimeout(checkFirebaseStatus, 1000);
+    }
+}
+
+// Firebase'den mevcut verileri yükle
+function loadFromFirebase() {
+    if (!firebaseInitialized || !window.firebaseGetDoc || !window.firebaseDoc || !window.firebaseDb) {
+        console.log('Firebase fonksiyonları hazır değil');
+        return;
+    }
+    
+    console.log('Firebase\'den veri yükleniyor...');
+    
+    try {
+        const docRef = window.firebaseDoc(window.firebaseDb, 'diary', 'main');
+        window.firebaseGetDoc(docRef).then((doc) => {
+            console.log('Firebase doküman durumu:', doc.exists());
+            
+            if (doc.exists()) {
+                const data = doc.data();
+                console.log('Firebase\'den veri alındı:', data);
+                
+                // Yerel verilerden daha yeni mi kontrol et
+                const localSync = localStorage.getItem('diarySync');
+                if (localSync) {
+                    const localData = JSON.parse(localSync);
+                    console.log('Yerel sync:', localData.lastSync, 'Firebase sync:', data.lastSync);
+                    
+                    if (data.lastSync > localData.lastSync) {
+                        // Firebase'den gelen veri daha yeni, güncelle
+                        console.log('Firebase verisi daha yeni, güncelleniyor...');
+                        diaryData = data.diaryData;
+                        localStorage.setItem('diaryData', JSON.stringify(diaryData));
+                        localStorage.setItem('diarySync', JSON.stringify(data));
+                        loadCurrentDayData();
+                        showSaveNotification('Veriler Firebase\'den yüklendi! 🔄');
+                    } else {
+                        console.log('Yerel veri daha yeni veya aynı');
+                    }
+                } else {
+                    // Yerel veri yok, Firebase'den veriyi kullan
+                    console.log('Yerel veri yok, Firebase verisi kullanılıyor...');
+                    diaryData = data.diaryData;
+                    localStorage.setItem('diaryData', JSON.stringify(diaryData));
+                    localStorage.setItem('diarySync', JSON.stringify(data));
+                    loadCurrentDayData();
+                    showSaveNotification('Veriler Firebase\'den yüklendi! 📥');
+                }
+            } else {
+                console.log('Firebase\'de veri yok, yerel verileri Firebase\'e yükle');
+                // Firebase'de veri yok, yerel verileri yükle
+                syncToCloud();
+            }
+        }).catch((error) => {
+            console.error('Firebase veri yükleme hatası:', error);
+            showSaveNotification('Firebase bağlantı hatası! 🔌');
+        });
+    } catch (error) {
+        console.error('Firebase yükleme hatası:', error);
     }
 }
 
@@ -598,7 +667,7 @@ function saveCurrentDayData() {
 
 // Firebase ile gerçek zamanlı senkronizasyon
 function syncToCloud() {
-    if (syncInProgress || !firebaseInitialized) return;
+    if (syncInProgress) return;
     
     syncInProgress = true;
     
@@ -616,19 +685,22 @@ function syncToCloud() {
         localStorage.setItem('diarySync', JSON.stringify(dataToSync));
         
         // Firebase'e kaydet
-        if (window.firebaseSetDoc && window.firebaseDoc && window.firebaseDb) {
+        if (firebaseInitialized && window.firebaseSetDoc && window.firebaseDoc && window.firebaseDb) {
             const docRef = window.firebaseDoc(window.firebaseDb, 'diary', 'main');
             window.firebaseSetDoc(docRef, dataToSync)
                 .then(() => {
-                    console.log('Firebase\'e kaydedildi');
+                    console.log('Firebase\'e başarıyla kaydedildi');
+                    showSaveNotification('Veriler senkronize edildi! ☁️');
                 })
                 .catch((error) => {
                     console.error('Firebase kaydetme hatası:', error);
+                    showSaveNotification('Senkronizasyon hatası! 🔄');
                 })
                 .finally(() => {
                     syncInProgress = false;
                 });
         } else {
+            console.log('Firebase henüz hazır değil, sadece localStorage\'a kaydedildi');
             syncInProgress = false;
         }
         
@@ -653,6 +725,7 @@ function startFirebaseListener() {
         window.firebaseOnSnapshot(docRef, (doc) => {
             if (doc.exists()) {
                 const data = doc.data();
+                console.log('Firebase\'den güncelleme geldi:', data);
                 
                 // Yerel verilerden daha yeni mi kontrol et
                 const localSync = localStorage.getItem('diarySync');
@@ -664,7 +737,7 @@ function startFirebaseListener() {
                         localStorage.setItem('diaryData', JSON.stringify(diaryData));
                         localStorage.setItem('diarySync', JSON.stringify(data));
                         loadCurrentDayData();
-                        showSaveNotification('Veriler senkronize edildi! 🔄');
+                        showSaveNotification('Veriler güncellendi! 🔄');
                     }
                 } else {
                     // Yerel veri yok, Firebase'den veriyi kullan
@@ -674,9 +747,12 @@ function startFirebaseListener() {
                     loadCurrentDayData();
                     showSaveNotification('Veriler yüklendi! 📥');
                 }
+            } else {
+                console.log('Firebase\'de veri yok');
             }
         }, (error) => {
             console.error('Firebase dinleme hatası:', error);
+            showSaveNotification('Bağlantı hatası! 🔌');
         });
         
         console.log('Firebase dinleyici başlatıldı');
