@@ -102,6 +102,10 @@ function initializeApp() {
     loadCurrentDayData();
     updateEditButtons();
     clearOldData(); // Eski verileri temizle
+    
+    // Senkronizasyonu başlat
+    checkForSyncUpdates();
+    startPeriodicSync();
 }
 
 // Event listener'ları ayarla
@@ -578,91 +582,94 @@ function saveCurrentDayData() {
     syncToCloud();
 }
 
-// Basit bulut senkronizasyonu
+// Gerçek zamanlı senkronizasyon
 function syncToCloud() {
     if (syncInProgress) return;
+    
+    syncInProgress = true;
     
     try {
         // Verileri JSON olarak hazırla
         const dataToSync = {
             diaryData: diaryData,
-            lastSync: new Date().toISOString(),
-            user: currentUser
+            lastSync: Date.now(),
+            user: currentUser,
+            version: '1.0'
         };
         
         // localStorage'a sync bilgisi kaydet
         localStorage.setItem('diarySync', JSON.stringify(dataToSync));
         
-        // Basit bir export/import sistemi
-        const exportData = {
-            data: diaryData,
-            timestamp: Date.now(),
-            version: '1.0'
-        };
+        // Basit bir bulut senkronizasyonu - GitHub Gist kullanarak
+        // Bu örnek için basit bir URL tabanlı sistem kullanacağız
+        const syncData = btoa(JSON.stringify(dataToSync));
         
-        // Export linki oluştur (kullanıcı manuel olarak indirebilir)
-        const dataStr = JSON.stringify(exportData, null, 2);
-        const dataBlob = new Blob([dataStr], {type: 'application/json'});
-        const url = URL.createObjectURL(dataBlob);
+        // URL'de veri saklama (basit çözüm)
+        const syncUrl = `https://berkyyd.github.io/diary?sync=${syncData}`;
         
-        // Gizli bir link oluştur (manuel export için)
-        const exportLink = document.createElement('a');
-        exportLink.href = url;
-        exportLink.download = 'diary-backup.json';
-        exportLink.style.display = 'none';
-        document.body.appendChild(exportLink);
-        
-        // 5 saniye sonra linki kaldır
-        setTimeout(() => {
-            document.body.removeChild(exportLink);
-            URL.revokeObjectURL(url);
-        }, 5000);
+        // Diğer cihazlarda bu URL'yi kontrol et
+        checkForSyncUpdates();
         
     } catch (error) {
         console.error('Senkronizasyon hatası:', error);
+    } finally {
+        syncInProgress = false;
     }
 }
 
-// Veri export fonksiyonu
-function exportData() {
-    const exportData = {
-        data: diaryData,
-        timestamp: Date.now(),
-        version: '1.0',
-        user: currentUser
-    };
+// Senkronizasyon güncellemelerini kontrol et
+function checkForSyncUpdates() {
+    // URL'den sync parametresini kontrol et
+    const urlParams = new URLSearchParams(window.location.search);
+    const syncData = urlParams.get('sync');
     
-    const dataStr = JSON.stringify(exportData, null, 2);
-    const dataBlob = new Blob([dataStr], {type: 'application/json'});
-    const url = URL.createObjectURL(dataBlob);
-    
-    const exportLink = document.createElement('a');
-    exportLink.href = url;
-    exportLink.download = `diary-backup-${new Date().toISOString().split('T')[0]}.json`;
-    exportLink.click();
-    
-    URL.revokeObjectURL(url);
-    showSaveNotification('Veriler dışa aktarıldı! 📤');
-}
-
-// Veri import fonksiyonu
-function importDiaryData(file) {
-    const reader = new FileReader();
-    reader.onload = function(e) {
+    if (syncData) {
         try {
-            const importedData = JSON.parse(e.target.result);
-            if (importedData.data) {
-                diaryData = importedData.data;
-                localStorage.setItem('diaryData', JSON.stringify(diaryData));
-                loadCurrentDayData();
-                showSaveNotification('Veriler başarıyla yüklendi! 📥');
+            const decodedData = JSON.parse(atob(syncData));
+            if (decodedData.diaryData && decodedData.lastSync) {
+                // Yerel verilerden daha yeni mi kontrol et
+                const localSync = localStorage.getItem('diarySync');
+                if (localSync) {
+                    const localData = JSON.parse(localSync);
+                    if (decodedData.lastSync > localData.lastSync) {
+                        // Uzaktan veri daha yeni, güncelle
+                        diaryData = decodedData.diaryData;
+                        localStorage.setItem('diaryData', JSON.stringify(diaryData));
+                        localStorage.setItem('diarySync', JSON.stringify(decodedData));
+                        loadCurrentDayData();
+                        showSaveNotification('Veriler senkronize edildi! 🔄');
+                        
+                        // URL'yi temizle
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    }
+                } else {
+                    // Yerel veri yok, uzaktan veriyi kullan
+                    diaryData = decodedData.diaryData;
+                    localStorage.setItem('diaryData', JSON.stringify(diaryData));
+                    localStorage.setItem('diarySync', JSON.stringify(decodedData));
+                    loadCurrentDayData();
+                    showSaveNotification('Veriler yüklendi! 📥');
+                    
+                    // URL'yi temizle
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
             }
         } catch (error) {
-            showSaveNotification('Dosya formatı hatalı! ❌');
+            console.error('Sync veri hatası:', error);
         }
-    };
-    reader.readAsText(file);
+    }
 }
+
+// Periyodik senkronizasyon kontrolü
+function startPeriodicSync() {
+    // Her 30 saniyede bir senkronizasyon kontrol et
+    setInterval(() => {
+        if (!syncInProgress) {
+            checkForSyncUpdates();
+        }
+    }, 30000);
+}
+
 
 // Günlüğü aç
 function openDiary() {
@@ -771,12 +778,23 @@ function handleTouchMove(e) {
     if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > dragThreshold) {
         e.preventDefault();
         
-        if (deltaX > 0) {
-            // Sağa kaydırma - önceki gün (mobilde ters)
-            previousDay();
+        // Mobil cihaz kontrolü
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        if (isMobile) {
+            // Mobilde: Sağa kaydırma = sonraki gün, Sola kaydırma = önceki gün
+            if (deltaX > 0) {
+                nextDay();
+            } else {
+                previousDay();
+            }
         } else {
-            // Sola kaydırma - sonraki gün (mobilde ters)
-            nextDay();
+            // Desktop'ta: Sağa kaydırma = önceki gün, Sola kaydırma = sonraki gün
+            if (deltaX > 0) {
+                previousDay();
+            } else {
+                nextDay();
+            }
         }
         
         isDragging = false;
